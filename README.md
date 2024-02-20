@@ -1,2 +1,2 @@
 # BART
-Bayesian Additive Regression Tree
+황범석 교수님 학부인턴 중 공부하게 된 베이지안 기반 머신러닝 기법이다.
