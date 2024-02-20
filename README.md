@@ -1,2 +1,2 @@
 # BART
-Topic given as a student researcher in Chung-Ang University, Applied Statistics(Professor Beum Seok Hwang)
+Bayesian Additive Regression Tree(https://www.jstor.org/stable/27801587)
