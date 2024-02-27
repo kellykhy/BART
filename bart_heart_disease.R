@@ -1,12 +1,15 @@
+# dataset from https://www.kaggle.com/code/hamdi20/ml-algorithms-for-heart-disease-prediction
+
 install.packages('dbarts')
 install.packages('readr')
 install.packages('corrplot')
+install.packages("caret")
+library(caret)
 library(dbarts)
 library(readr)
 library(corrplot)
 library(ggplot2)
 library(dplyr)
-library(reshape2)
 rm(list=ls())
 
 # age: patient's age in years 
@@ -24,17 +27,20 @@ rm(list=ls())
 # thal: thallium stress test (thalassemia) (categorical variable)
 # target: presence of heart disease (0: No disease, 1: Heart disease) (binary variable)
 
-# EDA
+# 1. EDA
 myData <- read.csv("heart.csv")
 head(myData)
 dim(myData) # 1024 14
 summary(myData)
 str(myData)
 
-## missing value analysis
+## 1) Missing Value Analysis
 sum(is.na(myData))
 
-## categorical features - unique value analysis
+numeric_list = c('age', 'trestbps','chol','thalach','oldpeak', 'target')
+categorical_list = c("sex","cp","fbs","restecg","exang","slope","ca","thal","target")
+
+## 2) Unique Value Analysis(categorical features)
 unique(myData$sex)
 unique(myData$cp)
 unique(myData$fbs)
@@ -45,21 +51,18 @@ unique(myData$ca)
 unique(myData$thal)
 unique(myData$target)
 
-## age, trestbps, chol, thalach, oldpeak
-numeric_list = c('age', 'trestbps','chol','thalach','oldpeak', 'target')
-categorical_list = c("sex","cp","fbs","restecg","exang","slope","ca","thal","target")
 
-## correlation analysis
+## 3) Correlation Analysis(numeric features)
 c <- round(cor(myData),2)
 corrplot(c, method = "number")
 
-
+## 4) Box Plot
 boxplot(myData[, c('age', 'chol', 'thalach', 'trestbps')], 
 				main="Boxplot of Age, Cholesterol, Max Heart Rate, and Resting Blood Pressure",
 				xlab="Variables", ylab="Values", 
 				col=c("red","blue","green","purple"))
 
-## data preparation
+## 5) Data Preparation (replace outliers with mean)
 for (col in numeric_list) {
 	q1 <- quantile(myData[[col]], 0.25)
 	q3 <- quantile(myData[[col]], 0.75)
@@ -70,7 +73,7 @@ for (col in numeric_list) {
 }
 
 
-## Categorical Feature Analysis
+## 6) Categorical Feature Analysis
 df_categoric <- myData[, categorical_list]
 
 for (i in categorical_list) {
@@ -83,31 +86,39 @@ for (i in categorical_list) {
 }
 par(mfrow = c(1, 1))
 
-## Numeric Feature Analysis
+## 7) Numeric Feature Analysis
 # 이따 해보기
 
-## Standardization
-myData[numeric_list[-length(numeric_list)]] <- myData[numeric_list[-length(numeric_list)]] %>% mutate_all(~(scale(.) %>% as.vector))
+## 8) Standardization (생략 가능)
+# myData[numeric_list[-length(numeric_list)]] <- myData[numeric_list[-length(numeric_list)]] %>% mutate_all(~(scale(.) %>% as.vector))
 
 
-# selecting test dataset (30%)
+
+# 2. selecting test dataset (30%)
 testsize=as.integer(nrow(myData)*0.3)
 test_index=sort(sample(1:nrow(myData),testsize,replace=F)) #random sampling for test data set
 myData_test = myData[test_index, ]
 myData_train = myData[-test_index, ]
 
 
-# Modeling with BART
+# 3. Modeling with BART
 fits1 <- bart2(target ~ age + sex + cp + trestbps + chol + fbs + restecg + thalach + exang + oldpeak + slope + ca + thal, data = myData_train, keepTrees = TRUE)
 fitted_test1 <- predict(fits1, newdata = myData_test, type = 'ppd', n.trees = 75)
+
 dim(fitted_test1)
+head(fitted_test1)
+table(fitted_test1)
+
 y_pred <- apply(fitted_test1, 2, mean)
-y_pred
+head(y_pred)
+summary(y_pred)
 
-threshold <- 0.5 
-
+threshold <- 0.5
 y_pred_binary <- ifelse(y_pred >= threshold, 1, 0)
-y_pred_binary
-myData_test$target
+y_pred_binary # predicted value
+myData_test$target # true value
+# sum(y_pred_binary-myData_test$target)  # number of incorrect predictions
 
-sum(y_pred_binary-myData_test$target) # only 2 incorrect among test dataset.
+# 4. Confusion Matrix
+cm<-confusionMatrix(as.factor(y_pred_binary), as.factor(myData_test$target))
+cm
