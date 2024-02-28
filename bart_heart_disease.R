@@ -1,4 +1,4 @@
-# dataset from https://www.kaggle.com/code/hamdi20/ml-algorithms-for-heart-disease-prediction
+# dataset from https://www.kaggle.com/datasets/johnsmith88/heart-disease-dataset
 
 install.packages('dbarts')
 install.packages('readr')
